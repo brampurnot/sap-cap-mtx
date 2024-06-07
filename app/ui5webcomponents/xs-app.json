@@ -1,0 +1,20 @@
+{
+  "welcomeFile": "index.html",
+  "authenticationMethod": "route",
+  "routes": [
+    {
+      "source": "^/backend/(.*)$",
+      "target": "/odata/v4/$1",
+      "destination": "srv-api",
+      "authenticationType": "xsuaa",
+      "csrfProtection": false
+    },
+    {
+      "source": "^/(.*)$",
+      "localDir": "out",
+      "csrfProtection": true,
+      "authenticationType": "xsuaa",
+      "cacheControl": "no-cache"
+    }
+  ]
+}

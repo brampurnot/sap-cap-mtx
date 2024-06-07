@@ -1,0 +1,142 @@
+global:
+  domain: fc46f57.kyma.ondemand.com
+  imagePullSecret:
+    name: regcrd
+srv:
+  bindings:
+    auth:
+      serviceInstanceName: xsuaa
+    service-manager:
+      serviceInstanceName: service-manager
+  image:
+    repository: bpurnot/helloworld-srv
+    tag: 0.0.13
+  resources:
+    limits:
+      ephemeral-storage: 1G
+      memory: 500M
+    requests:
+      ephemeral-storage: 1G
+      cpu: 500m
+      memory: 500M
+  health:
+    liveness:
+      path: /health
+    readiness:
+      path: /health
+  env:
+    SAP_JWT_TRUST_ACL: '[{"clientid" : "*", "identityzone" : "*"}]'
+xsuaa:
+  serviceOfferingName: xsuaa
+  servicePlanName: application
+  parameters:
+    xsappname: cap-kyma-saas
+    tenant-mode: shared
+    oauth2-configuration:
+      redirect-uris:
+        - https://*.fc46f57.kyma.ondemand.com/**
+    scopes:
+      - name: "uaa.user"
+        description: UAA
+      - name: "$XSAPPNAME.mtcallback"
+        description: Subscription via SaaS Registry
+        grant-as-authority-to-apps:
+           - "$XSAPPNAME(application,sap-provisioning,tenant-onboarding)"
+      - name: "$XSAPPNAME.cds.ExtensionDeveloper"
+        description: Extend CAP applications via extension projects
+      - name: "$XSAPPNAME.cds.UIFlexDeveloper"
+        description: Extend CAP applications via UIFlex extensibility
+    role-templates:
+      - name: Token_Exchange
+        description: UAA
+        scope-references:
+          - "uaa.user"
+      - name: ExtensionDeveloper
+        description: Extension development including UIFlex extensibility
+        scope-references:
+          - "$XSAPPNAME.cds.ExtensionDeveloper"
+          - "$XSAPPNAME.cds.UIFlexDeveloper"
+approuter:
+  image:
+    repository: bpurnot/helloworld-app
+    tag: 0.0.20
+  resources:
+    limits:
+      ephemeral-storage: 1G
+      memory: 500M
+    requests:
+      ephemeral-storage: 1G
+      cpu: 500m
+      memory: 500M
+  health:
+    liveness:
+      path: /
+    readiness:
+      path: /
+  envFrom:
+    - configMapRef:
+        name: "{{ .Release.Name }}-approuter-configmap"
+  expose:
+    enabled: true
+  bindings:
+    auth:
+      serviceInstanceName: xsuaa
+  env:
+    SAP_JWT_TRUST_ACL: '[{"clientid" : "*", "identityzone" : "*"}]'
+    TENANT_HOST_PATTERN: ^(.*)-{{ .Release.Name }}-approuter-{{ .Release.Namespace }}.{{ .Values.global.domain }} # change if expose.host is set
+backendDestinations:
+  srv-api:
+    service: srv
+service-manager:
+  serviceOfferingName: service-manager
+  servicePlanName: container
+saas-registry:
+  serviceOfferingName: saas-registry
+  servicePlanName: application
+  parametersFrom:
+    - secretKeyRef:
+        name: "{{ .Release.Name }}-saas-registry-secret"
+        key: parameters
+saasRegistryParameters:
+  xsappname: cap-kyma-saas
+  appName: cap-kyma-saas
+  displayName: cap-kyma-saas
+  description: A simple CAP project.
+  category: "CAP Application"
+  bindSidecar: true
+  appUrls:
+    getDependencies: "/-/cds/saas-provisioning/dependencies"
+    onSubscription: "/-/cds/saas-provisioning/tenant/{tenantId}"
+    onSubscriptionAsync: true
+    onUnSubscriptionAsync: true
+    onUpdateDependenciesAsync: true
+    callbackTimeoutMillis: 300000
+sidecar:
+  bindings:
+    auth:
+      serviceInstanceName: xsuaa
+    saas-registry:
+      serviceInstanceName: saas-registry
+    service-manager:
+      serviceInstanceName: service-manager
+  image:
+    repository: bpurnot/helloworld-sidecar
+    tag: 0.0.6
+  resources:
+    limits:
+      ephemeral-storage: 1G
+      memory: 500M
+    requests:
+      ephemeral-storage: 1G
+      cpu: 500m
+      memory: 500M
+  health:
+    liveness:
+      path: /health
+    readiness:
+      path: /health
+  envFrom:
+    - configMapRef:
+        name: "{{ .Release.Name }}-mtxs-configmap"
+  env:
+    SAP_JWT_TRUST_ACL: '[{"clientid" : "*", "identityzone" : "*"}]'
