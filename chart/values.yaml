@@ -10,7 +10,7 @@ srv:
       serviceInstanceName: service-manager
   image:
     repository: bpurnot/helloworld-srv
-    tag: 0.0.13
+    tag: 0.0.37
   resources:
     limits:
       ephemeral-storage: 1G
@@ -24,8 +24,6 @@ srv:
       path: /health
     readiness:
       path: /health
-  env:
-    SAP_JWT_TRUST_ACL: '[{"clientid" : "*", "identityzone" : "*"}]'
 xsuaa:
   serviceOfferingName: xsuaa
   servicePlanName: application
@@ -138,5 +136,3 @@ sidecar:
   envFrom:
     - configMapRef:
         name: "{{ .Release.Name }}-mtxs-configmap"
-  env:
-    SAP_JWT_TRUST_ACL: '[{"clientid" : "*", "identityzone" : "*"}]'

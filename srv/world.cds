@@ -1,6 +1,6 @@
 using { sap.capire.bookshop as my } from '../db/schema';
 
-service say {
+service say @(requires:'authenticated-user') {
   function whoami (message:String) returns String;
 }
 

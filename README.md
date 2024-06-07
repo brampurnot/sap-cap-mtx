@@ -36,8 +36,8 @@ pack build helloworld-srv \
      --builder paketobuildpacks/builder-jammy-base \
      --env BP_NODE_RUN_SCRIPTS=
 
-docker tag helloworld-srv:latest bpurnot/helloworld-srv:0.0.13
-docker push bpurnot/helloworld-srv:0.0.13
+docker tag helloworld-srv:latest bpurnot/helloworld-srv:0.0.37
+docker push bpurnot/helloworld-srv:0.0.37
 
 ## Frontend service
 
